@@ -47,15 +47,22 @@ def lambda_handler(event, context):
 		'X-Forwarded-For': ip
 	})
 
-	eapConfig = str(r.text)
-	delim = '</AuthenticationMethod>'
-	*auth_methods, rest = eapConfig.split(delim)
-	eapConfigConverted = delim.join(chain(fix_geant(auth_methods), [rest]))
-	headers = dict(r.headers)
-	headers['Content-Length'] = len(eapConfigConverted)
+	if r.ok:
+		eapConfig = r.content.decode()
+		delim = '</AuthenticationMethod>'
+		*auth_methods, rest = eapConfig.split(delim)
+		eapConfigConverted = delim.join(chain(fix_geant(auth_methods), [rest]))
+		headers = dict(r.headers)
+		headers['Content-Length'] = len(eapConfigConverted)
+
+		return {
+			'statusCode': int(r.status_code),
+			'headers': headers,
+			'body': eapConfigConverted,
+		}
 
 	return {
-		'statusCode': int(r.status_code),
-		'headers': headers,
-		'body': eapConfigConverted,
+		'statusCode': r.status_code,
+		'headers': dict(r.headers),
+		'body': r.content.decode(),
 	}
